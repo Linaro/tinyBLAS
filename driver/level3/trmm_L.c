@@ -112,16 +112,16 @@ int CNAME(blas_arg_t *args, BLASLONG *range_m, BLASLONG *range_n, FLOAT *sa, FLO
 #endif
   }
 
-  for(js = 0; js < n; js += GEMM_R){
-    min_j = n - js;
-    if (min_j > GEMM_R) min_j = GEMM_R;
+  for(js = 0; js < n; js += GEMM_R){    /* GEMM_R: 4096 */  /* Loop 1.0 */
+    min_j = n - js;                      /* 把 n 列做 4096列 分割。每次处理最多 4096 列。 */
+    if (min_j > GEMM_R) min_j = GEMM_R;  /* 最多处理 4096 列 数据， 假设小矩阵， min_j = n */
 
 #if (defined(UPPER) && !defined(TRANSA)) || (!defined(UPPER) && defined(TRANSA))
 
-    min_l = m;
+    min_l = m;                            /* GEMM_Q: 512 */
     if (min_l > GEMM_Q) min_l = GEMM_Q;
     min_i = min_l;
-    if (min_i > GEMM_P) min_i = GEMM_P;
+    if (min_i > GEMM_P) min_i = GEMM_P;   /* GEMM_P: 256 */
 
     START_RPCC();
 
@@ -133,15 +133,16 @@ int CNAME(blas_arg_t *args, BLASLONG *range_m, BLASLONG *range_n, FLOAT *sa, FLO
 
     STOP_RPCC(innercost);
 
-    for(jjs = js; jjs < js + min_j; jjs += min_jj){
+    for(jjs = js; jjs < js + min_j; jjs += min_jj){   /* Loop 2.1 */
       min_jj = min_j + js - jjs;
-      if (min_jj > GEMM_UNROLL_N*3) min_jj = GEMM_UNROLL_N*3;
+      if (min_jj > GEMM_UNROLL_N*3) min_jj = GEMM_UNROLL_N*3;  // 4*3
       else
       	if (min_jj > GEMM_UNROLL_N) min_jj = GEMM_UNROLL_N;
 
       START_RPCC();
 
-      GEMM_ONCOPY(min_l, min_jj, b + (jjs * ldb) * COMPSIZE, ldb, sb + min_l * (jjs - js) * COMPSIZE);
+      GEMM_ONCOPY(min_l, min_jj, b + (jjs * ldb) * COMPSIZE, ldb, s
+      b + min_l * (jjs - js) * COMPSIZE);
 
       STOP_RPCC(outercost);
 
@@ -157,7 +158,8 @@ int CNAME(blas_arg_t *args, BLASLONG *range_m, BLASLONG *range_n, FLOAT *sa, FLO
     }
 
 
-    for(is = min_i; is < min_l; is += GEMM_P){
+    for(is = min_i; is < min_l; is += GEMM_P){   /* GEMM_P: 256 */
+
       min_i = min_l - is;
       if (min_i > GEMM_P) min_i = GEMM_P;
 
@@ -183,7 +185,7 @@ int CNAME(blas_arg_t *args, BLASLONG *range_m, BLASLONG *range_n, FLOAT *sa, FLO
 
     }
 
-    for(ls = min_l; ls < m; ls += GEMM_Q){
+    for(ls = min_l; ls < m; ls += GEMM_Q){   /* GEMM_Q: 512 */  /* Loop 2.3 */
       min_l = m - ls;
       if (min_l > GEMM_Q) min_l = GEMM_Q;
       min_i = ls;
@@ -199,9 +201,9 @@ int CNAME(blas_arg_t *args, BLASLONG *range_m, BLASLONG *range_n, FLOAT *sa, FLO
 
       STOP_RPCC(innercost);
 
-      for(jjs = js; jjs < js + min_j; jjs += min_jj){
+      for(jjs = js; jjs < js + min_j; jjs += min_jj){     /* Loop 3.1 */
 	min_jj = min_j + js - jjs;
-        if (min_jj > GEMM_UNROLL_N*3) min_jj = GEMM_UNROLL_N*3;
+        if (min_jj > GEMM_UNROLL_N*3) min_jj = GEMM_UNROLL_N*3;  /* DGEMM_UNROLL_N: 4 */
         else
 	  if (min_jj > GEMM_UNROLL_N) min_jj = GEMM_UNROLL_N;
 
@@ -223,7 +225,7 @@ int CNAME(blas_arg_t *args, BLASLONG *range_m, BLASLONG *range_n, FLOAT *sa, FLO
 	STOP_RPCC(gemmcost);
       }
 
-      for(is = min_i; is < ls; is += GEMM_P){
+      for(is = min_i; is < ls; is += GEMM_P){  /* Loop 3.2 */
 	min_i = ls - is;
 	if (min_i > GEMM_P) min_i = GEMM_P;
 
@@ -248,9 +250,9 @@ int CNAME(blas_arg_t *args, BLASLONG *range_m, BLASLONG *range_n, FLOAT *sa, FLO
 	STOP_RPCC(gemmcost);
       }
 
-      for(is = ls; is < ls + min_l; is += GEMM_P){
+      for(is = ls; is < ls + min_l; is += GEMM_P){   /* Loop 3.3 */
 	min_i = ls + min_l - is;
-	if (min_i > GEMM_P) min_i = GEMM_P;
+	if (min_i > GEMM_P) min_i = GEMM_P;   /* GEMM_P, 256 */
 
 	START_RPCC();
 
