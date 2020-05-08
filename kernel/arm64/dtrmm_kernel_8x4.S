@@ -149,6 +149,20 @@ USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 	fmov		d31, d18
 .endm
 
+/* Input:
+ *   pA: address of loading from *a
+ *   pB: address of loading from *b
+ * Vector registers:
+ *   v16 ~ v31: c
+ *   v0 ~ v3:   a
+ *   v8, v9, v10, v11: b
+ * Output:
+ *   v16 ~ v31         : updated c
+ *   v4,  v5,  v6,  v7 : next column of a
+ *   v12, v13, v14, v15: next row    of b
+ *   pA: pointing to next elements of *a
+ *   pB: pointing to next elements of *b
+ */
 .macro KERNEL8x4_I
 	ldp	q0, q1, [pA], #32
 
