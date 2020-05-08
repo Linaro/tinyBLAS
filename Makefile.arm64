@@ -4,6 +4,11 @@ CCOMMON_OPT += -march=armv8-a
 FCOMMON_OPT += -march=armv8-a
 endif
 
+ifeq ($(CORE), ARMV8SVE)
+CCOMMON_OPT += -march=armv8.2-a+sve
+FCOMMON_OPT += -march=armv8.2-a+sve
+endif
+
 ifeq ($(CORE), CORTEXA53)
 CCOMMON_OPT += -march=armv8-a -mtune=cortex-a53
 FCOMMON_OPT += -march=armv8-a -mtune=cortex-a53
